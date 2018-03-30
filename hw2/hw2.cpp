@@ -21,14 +21,13 @@ int main(int argc, char* argv[]){
   Mat dst, img;
   int width, height;
 
-  src = imread("./test.jpg");
+  src = imread("./_DSC0001.JPG");
   if(!src.data){
     printf("open image fail\n");
     return -1;
   }
   dst = src.clone();
   img = src.clone();
-//  Mat mask(dst.rows, dst.cols, CV_8U, Scalar(0));
 
   width = src.cols;
   height = src.rows;
