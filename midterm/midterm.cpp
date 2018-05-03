@@ -32,19 +32,20 @@ int main(int argc, char* argv[]){
     return -1;
   }
 
-  error_F = 1e-3;
+  error_F = 1e-4;
   setPoints();
   calT();
-cout << T << endl;
   normalizePoint();
+
   calF();
-cout << F << endl;
+
   while(!calError()){
     calF();
   }
   calF(1); //ch6-1, P.57, t = 0
+
   calEpipole();
-cout << F << endl;
+
   //cal T
   Mat trans = (Mat_<float>(3, 3) <<
       1, 0, -src1.cols,
@@ -53,10 +54,8 @@ cout << F << endl;
 
   Te_L = trans * epipoleL;
   Te_R = trans * epipoleR;
-
   calR();
-cout << R_L << endl;
-cout << R_R << endl;
+
   //cal G
   Mat GL = (Mat_<float>(3, 3) <<
       1, 0, 0,
@@ -137,7 +136,7 @@ void calT(){
   T = tmp1 * tmp2;
 
   //R img
-  for(int i = 0, length = 0; i < pointR.size(); i++){
+  for(i = 0, length = 0; i < pointR.size(); i++){
     tmp = pointR[i] - avgR;
     length += norm(tmp);
   }
@@ -169,6 +168,7 @@ void normalizePoint(){
 
 void calF(int mode){
   int size = normalL.size();
+  //printf("%d\n", size);
   Mat A(size, 9, CV_32F);
   for(int i = 0; i < size; i++){
     A.at<float>(i, 0) = normalR[i].x * normalL[i].x;
@@ -181,6 +181,7 @@ void calF(int mode){
     A.at<float>(i, 7) = normalL[i].y;
     A.at<float>(i, 8) = 1;
   }
+
   Mat w, u, vt;
   SVD::compute(A, w, u, vt, SVD::FULL_UV);  //SVD 分解
   Mat Fh = (Mat_<float>(3, 3) <<
@@ -188,15 +189,16 @@ void calF(int mode){
       vt.at<float>(8, 3), vt.at<float>(8, 4), vt.at<float>(8, 5),
       vt.at<float>(8, 6), vt.at<float>(8, 7), vt.at<float>(8, 8));
 
-  if(mode == 0)
-    F = TP.t() * Fh * T;
-  else{
-    SVD::compute(Fh, w, u, vt, SVD::FULL_UV);
+  Fh = Fh * -1;
+  F = TP.t() * (Fh * T);
+
+  if(mode != 0){
+    SVD::compute(F, w, u, vt, SVD::FULL_UV);
     Mat s = (Mat_<float>(3, 3) <<
         w.at<float>(0, 0), 0, 0,
         0, w.at<float>(1, 0), 0,
         0,                 0, 0);
-    F = TP.t() * (u * s * vt) * T;
+    F = u * s * vt;
   }
 
 }
@@ -207,9 +209,10 @@ bool calError(){
   int index;
 
   for(int i = 0; i < normalL.size(); i++){
-    pL = (Mat_<float>(3, 1) << normalL[i].x, normalL[i].y, normalL[i].z);
-    pR = (Mat_<float>(1, 3) << normalR[i].x, normalR[i].y, normalR[i].z);
-    Mat errMat = pR * F * pL;
+    pL = (Mat_<float>(3, 1) << pointL[i].x, pointL[i].y, 1);
+    pR = (Mat_<float>(1, 3) << pointR[i].x, pointR[i].y, 1);
+
+    Mat errMat = pR * (F * pL);
     err = abs(errMat.at<float>(0, 0));
     if(max < err){
       max = err;
@@ -217,13 +220,13 @@ bool calError(){
     }
   }
   if(max > error_F){
-    normalL[index] = normalL[normalL.size()];
-    normalR[index] = normalR[normalR.size()];
+    normalL[index] = normalL[normalL.size()-1];
+    normalR[index] = normalR[normalR.size()-1];
     normalL.pop_back();
     normalR.pop_back();
 
-    pointL[index] = pointL[pointL.size()];
-    pointR[index] = pointR[pointR.size()];
+    pointL[index] = pointL[pointL.size()-1];
+    pointR[index] = pointR[pointR.size()-1];
     pointL.pop_back();
     pointR.pop_back();
     return false;
