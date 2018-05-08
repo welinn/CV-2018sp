@@ -189,7 +189,6 @@ void calF(int mode){
       vt.at<float>(8, 3), vt.at<float>(8, 4), vt.at<float>(8, 5),
       vt.at<float>(8, 6), vt.at<float>(8, 7), vt.at<float>(8, 8));
 
-  Fh = Fh * -1;
   F = TP.t() * (Fh * T);
 
   if(mode != 0){
