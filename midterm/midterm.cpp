@@ -98,6 +98,14 @@ void setPoints(){
   pointR.push_back(Point2f(2606, 2016)); pointR.push_back(Point2f(2980, 1525));
   pointR.push_back(Point2f(2665, 1453)); pointR.push_back(Point2f(2668, 1464));
 
+  Mat img1 = src1.clone();
+  Mat img2 = src2.clone();
+  for(int i = 0; i < 10; i++){
+    circle(img1, Point(pointL[i].x, pointL[i].y), 10, Scalar(0, 0, 255), CV_FILLED);
+    circle(img2, Point(pointR[i].x, pointR[i].y), 10, Scalar(0, 0, 255), CV_FILLED);
+  }
+  imwrite("img1.jpg", img1);
+  imwrite("img2.jpg", img2);
 }
 
 void calT(){
