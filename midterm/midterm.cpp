@@ -192,12 +192,12 @@ void calF(int mode){
   F = TP.t() * (Fh * T);
 
   if(mode != 0){
-    SVD::compute(F, w, u, vt, SVD::FULL_UV);
+    SVD::compute(Fh, w, u, vt, SVD::FULL_UV);
     Mat s = (Mat_<float>(3, 3) <<
         w.at<float>(0, 0), 0, 0,
         0, w.at<float>(1, 0), 0,
         0,                 0, 0);
-    F = u * s * vt;
+    F = TP.t() * (u * s * vt) * T;
   }
 
 }
