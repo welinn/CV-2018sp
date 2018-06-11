@@ -20,8 +20,6 @@ int main(int argc, char *argv[]){
     return -1;
   }
 
-//cout << (int)color.at<Vec3b>(200, 200)[2] << endl;
-
   Mat leftK, leftRt, rightK, rightRt, F;
   setPara(&leftK, &leftRt, &rightK, &rightRt, &F);
 
@@ -57,12 +55,13 @@ int main(int argc, char *argv[]){
       }
       if(index != -1){ //左圖有點
         Mat leftPt = (Mat_<double>(3, 1) << index, x, 1);
-        Mat lineR = F * leftPt; //epipolar line
-        double tmp1 = -lineR.at<double>(2, 0) / lineR.at<double>(1, 0);
-        double tmp2 = -(lineR.at<double>(0, 0) * srcR.cols + lineR.at<double>(2, 0)) / lineR.at<double>(1, 0);
+        Mat lineR = F * leftPt; //epipolar line ( ax + by + cz = 0)
+        double y1 = -lineR.at<double>(2, 0) / lineR.at<double>(1, 0);  //x = 0
+        double y2 = -(lineR.at<double>(0, 0) * srcR.cols + lineR.at<double>(2, 0)) / lineR.at<double>(1, 0);  //x = srcR.cols
 
-        int hMax = tmp1 > tmp2 ? (tmp1 > srcR.rows ? srcR.rows : tmp1) : (tmp2 > srcR.rows ? srcR.rows : tmp2);
-        int hMin = tmp1 < tmp2 ? (tmp1 < 0 ? 0 : tmp1) : (tmp2 < 0 ? 0 : tmp2);
+        //可能的高度範圍
+        int hMax = y1 > y2 ? (y1 > srcR.rows ? srcR.rows : y1) : (y2 > srcR.rows ? srcR.rows : y2);
+        int hMin = y1 < y2 ? (y1 < 0 ? 0 : y1) : (y2 < 0 ? 0 : y2);
 
         double minLen = 100;
         int indexRh = -1, indexRw = -1;
@@ -103,7 +102,7 @@ int main(int argc, char *argv[]){
           Mat X = V.colRange(3, 4);
           X /= X.at<double>(3, 0); //normalize
 
-          Mat err = A * X;
+//          Mat err = A * X;
 //          if(sqrt(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0)) < 30000){
             dst << X.at<double>(0, 0) << " " << X.at<double>(1, 0) << " " << -X.at<double>(2, 0) << " " <<
               (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2]/255 << " " <<
@@ -113,10 +112,7 @@ int main(int argc, char *argv[]){
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1] << " " <<
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[0] << endl;
 //          }
-
         }
-
-
       }
     }
 
