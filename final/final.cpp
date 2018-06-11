@@ -103,8 +103,8 @@ int main(int argc, char *argv[]){
           Mat X = V.colRange(3, 4);
           X /= X.at<double>(3, 0); //normalize
 
-          //Mat err = A * X;
-          //if(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0) < 100){
+          Mat err = A * X;
+//          if(sqrt(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0)) < 30000){
             dst << X.at<double>(0, 0) << " " << X.at<double>(1, 0) << " " << -X.at<double>(2, 0) << " " <<
               (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2]/255 << " " <<
               (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1]/255 << " " <<
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2] << " " <<
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1] << " " <<
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[0] << endl;
-          //}
+//          }
 
         }
 
