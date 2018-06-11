@@ -14,6 +14,14 @@ int main(int argc, char *argv[]){
   int num = 293; //picture 數量
   char fileName[20];
 
+  Mat color = imread("L/L_Color.JPG", 1);
+  if(!color.data){
+    printf("open img fail\n");
+    return -1;
+  }
+
+//cout << (int)color.at<Vec3b>(200, 200)[2] << endl;
+
   Mat leftK, leftRt, rightK, rightRt, F;
   setPara(&leftK, &leftRt, &rightK, &rightRt, &F);
 
@@ -26,8 +34,16 @@ int main(int argc, char *argv[]){
   for(int i = 0; i < num; i++){
     sprintf(fileName, "./L/L%03d.JPG", i);
     Mat srcL = imread(fileName, 0);
+    if(!srcL.data){
+      printf("open img fail\n");
+      return -1;
+    }
     sprintf(fileName, "./R/R%03d.JPG", i);
     Mat srcR = imread(fileName, 0);
+    if(!srcR.data){
+      printf("open img fail\n");
+      return -1;
+    }
 
     //check all pixel
     for(int x = 0; x < srcL.rows; x++){
@@ -48,14 +64,16 @@ int main(int argc, char *argv[]){
         int hMax = tmp1 > tmp2 ? (tmp1 > srcR.rows ? srcR.rows : tmp1) : (tmp2 > srcR.rows ? srcR.rows : tmp2);
         int hMin = tmp1 < tmp2 ? (tmp1 < 0 ? 0 : tmp1) : (tmp2 < 0 ? 0 : tmp2);
 
-        int maxR = -1;
+        double minLen = 100;
         int indexRh = -1, indexRw = -1;
         for(int h = hMin; h < hMax; h++){
           for(int w = 0; w < srcR.cols; w++){
-            if(srcR.at<uchar>(h, w) > 128 && srcR.at<uchar>(h, w) > maxR){
+            if(srcR.at<uchar>(h, w) > 128){
               //check point is on epipolar line
-              if(abs(lineR.at<double>(0, 0) * w + lineR.at<double>(1, 0) * h + lineR.at<double>(2, 0)) < 1){
-                maxR = srcR.at<uchar>(h, w);
+              Mat rightPt = (Mat_<double>(3, 1) << w, h, 1);
+              Mat len = rightPt.t() * F * leftPt;
+              if(abs(len.at<double>(0, 0)) < 0.1 && abs(len.at<double>(0, 0)) < minLen){
+                minLen = len.at<double>(0, 0);
                 indexRh = h;
                 indexRw = w;
               }
@@ -63,10 +81,11 @@ int main(int argc, char *argv[]){
           }
         }
         if(indexRh != -1){ //右圖有點
+
           int u = leftPt.at<double>(0, 0);
-          int v = leftPt.at<double>(1, 0);
+          int v = srcL.rows - leftPt.at<double>(1, 0);
           int u2 = indexRw;
-          int v2 = indexRh;
+          int v2 = srcR.rows - indexRh;
 
           //ch8 p.24
           Mat a1 = u * p3.t() - p1.t();
@@ -74,29 +93,34 @@ int main(int argc, char *argv[]){
           Mat a3 = u2 * pp3.t() - pp1.t();
           Mat a4 = v2 * pp3.t() - pp2.t();
           Mat A, Atmp1, Atmp2;
-          hconcat(a1, a2, Atmp1);
-          hconcat(a3, a4, Atmp2);
-          hconcat(Atmp1, Atmp2, A);
-
+          vconcat(a1, a2, Atmp1);
+          vconcat(a3, a4, Atmp2);
+          vconcat(Atmp1, Atmp2, A);
           Mat U, S, vt;
           SVD::compute(A, U, S, vt, SVD::FULL_UV);
 
           Mat V = vt.t();
-          Mat X = V.colRange(4, 5);
+          Mat X = V.colRange(3, 4);
           X /= X.at<double>(3, 0); //normalize
 
-          Mat err = A * X;
-          if(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0) < 50){
-            dst << X.at<double>(0, 0) << " " << X.at<double>(1, 0) << " " << X.at<double>(2, 0) << endl;
-          }
+          //Mat err = A * X;
+          //if(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0) < 100){
+            dst << X.at<double>(0, 0) << " " << X.at<double>(1, 0) << " " << -X.at<double>(2, 0) << " " <<
+              (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2]/255 << " " <<
+              (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1]/255 << " " <<
+              (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[0]/255 << endl;
+              //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2] << " " <<
+              //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1] << " " <<
+              //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[0] << endl;
+          //}
 
         }
 
 
       }
     }
-  }
 
+  }
   dst.close();
   return 0;
 }
@@ -106,7 +130,7 @@ void setPara(Mat *leftK, Mat *leftRt, Mat *rightK, Mat *rightRt, Mat *F){
       1035.278669095568, 0.000000000000, 295.500377771516,
       0.000000000000, 1034.880664685675, 598.224722223280,
       0.0, 0.0, 1.0);
-  *leftRt = (Mat_<double>(3, 3) <<
+  *leftRt = (Mat_<double>(3, 4) <<
       1, 0, 0, 0,
       0, 1, 0, 0,
       0, 0, 1, 0);
@@ -114,7 +138,7 @@ void setPara(Mat *leftK, Mat *leftRt, Mat *rightK, Mat *rightRt, Mat *F){
       1036.770200759934, 0.000000000000, 403.040387412710,
       0.000000000000, 1037.186415753241, 612.775486819306,
       0.0, 0.0, 1.0);
-  *rightRt = (Mat_<double>(3, 3) <<
+  *rightRt = (Mat_<double>(3, 4) <<
        0.958173249509,  0.009400631103,  0.286034354684, -69.855978076557,
       -0.009648701145,  0.999953303246, -0.000542119475,  0.110435878514,
       -0.286026094074, -0.002240415626,  0.958219209809,  14.517584144224);
