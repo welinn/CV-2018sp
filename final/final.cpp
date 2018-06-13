@@ -48,6 +48,7 @@ int main(int argc, char *argv[]){
       int max = -1;
       int index = -1;
       for(int y = 0; y < srcL.cols; y++){
+        //找左圖每列最亮的點
         if(srcL.at<uchar>(x, y) > 128 && srcL.at<uchar>(x, y) > max){
           max = srcL.at<uchar>(x, y);
           index = y;
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]){
         double y1 = -lineR.at<double>(2, 0) / lineR.at<double>(1, 0);  //x = 0
         double y2 = -(lineR.at<double>(0, 0) * srcR.cols + lineR.at<double>(2, 0)) / lineR.at<double>(1, 0);  //x = srcR.cols
 
-        //可能的高度範圍
+        //右圖對應點可能的高度範圍
         int hMax = y1 > y2 ? (y1 > srcR.rows ? srcR.rows : y1) : (y2 > srcR.rows ? srcR.rows : y2);
         int hMin = y1 < y2 ? (y1 < 0 ? 0 : y1) : (y2 < 0 ? 0 : y2);
 
@@ -102,8 +103,8 @@ int main(int argc, char *argv[]){
           Mat X = V.colRange(3, 4);
           X /= X.at<double>(3, 0); //normalize
 
-//          Mat err = A * X;
-//          if(sqrt(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0)) < 30000){
+          Mat err = A * X;
+          if(sqrt(err.at<double>(0, 0)*err.at<double>(0, 0) + err.at<double>(1, 0)*err.at<double>(1, 0) + err.at<double>(2, 0)*err.at<double>(2, 0) + err.at<double>(3, 0)*err.at<double>(3, 0)) < 5000){
             dst << X.at<double>(0, 0) << " " << X.at<double>(1, 0) << " " << -X.at<double>(2, 0) << " " <<
               (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2]/255 << " " <<
               (double)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1]/255 << " " <<
@@ -111,11 +112,10 @@ int main(int argc, char *argv[]){
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[2] << " " <<
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[1] << " " <<
               //(int)color.at<Vec3b>(leftPt.at<double>(1, 0), u)[0] << endl;
-//          }
+          }
         }
       }
     }
-
   }
   dst.close();
   return 0;
